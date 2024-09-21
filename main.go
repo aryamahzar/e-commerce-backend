@@ -19,11 +19,15 @@ import (
 	//
 	//    sw "github.com/myname/myrepo/go"
 	//
+	"github.com/aryamahzar/e-commerce-backend/db"
 	sw "github.com/aryamahzar/e-commerce-backend/go"
 )
 
 func main() {
 	log.Printf("Server started")
+
+	// Initialize MongoDB connection
+	_ = db.InitMongoDB()
 
 	router := sw.NewRouter()
 

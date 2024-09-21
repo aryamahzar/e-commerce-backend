@@ -9,7 +9,15 @@
 package swagger
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
+	"time"
+
+	"github.com/aryamahzar/e-commerce-backend/db"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // CancelOrder cancels an order. The order id is expected to be in the url path.
@@ -21,7 +29,50 @@ func CancelOrder(w http.ResponseWriter, r *http.Request) {
 // CreateOrder creates a new order. The order data is expected to be in the request body.
 func CreateOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
+
+	log.Printf("http.Request: %+v\n", r)
+
+	// Decode the incoming request body into the OrderCreate struct
+	var orderCreate OrderCreate
+	if err := json.NewDecoder(r.Body).Decode(&orderCreate); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("OrderCreate: %+v\n", orderCreate)
+
+	// Validate required fields
+	if len(orderCreate.Items) == 0 || orderCreate.UserId == "" || orderCreate.ShippingAddress == nil || orderCreate.BillingAddress == nil {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	orderStatus := CREATED
+
+	// Prepare the order to be inserted
+	newOrder := Order{
+		OrderId:         primitive.NewObjectID().Hex(), // Generate a new ObjectID for the order
+		UserId:          orderCreate.UserId,
+		Status:          &orderStatus, // Default status
+		OrderDate:       time.Now(),
+		Items:           orderCreate.Items,
+		ShippingAddress: orderCreate.ShippingAddress,
+		BillingAddress:  orderCreate.BillingAddress,
+		TotalAmount:     calculateTotalAmount(orderCreate.Items), // Implement this function to calculate total
+	}
+
+	// Insert the new order into MongoDB
+	collection := db.GetCollection("orders")
+	_, err := collection.InsertOne(context.TODO(), newOrder)
+	if err != nil {
+		http.Error(w, "Could not create order", http.StatusInternalServerError)
+		return
+	}
+
+	// Return the created order
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(newOrder)
+
 }
 
 // GetOrder retrieves an order by its id. The order id is expected to be in the url path.
@@ -34,10 +85,21 @@ func GetOrder(w http.ResponseWriter, r *http.Request) {
 func ListOrders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
+
+	fmt.Fprint(w, "{ListOrders}")
 }
 
 // UpdateOrder updates an existing order. The order id is expected to be in the url path. The order data is expected to be in the request body.
 func UpdateOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
+}
+
+// Helper function to calculate total order amount
+func calculateTotalAmount(items []OrderItem) float64 {
+	var total float64
+	for _, item := range items {
+		total += item.UnitPrice * float64(item.Quantity)
+	}
+	return total
 }

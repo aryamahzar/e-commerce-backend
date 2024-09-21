@@ -12,9 +12,9 @@ type OrderStatus string
 
 // List of OrderStatus
 const (
-	CREATED OrderStatus = "CREATED"
-	PAID OrderStatus = "PAID"
-	SHIPPED OrderStatus = "SHIPPED"
+	CREATED   OrderStatus = "CREATED"
+	PAID      OrderStatus = "PAID"
+	SHIPPED   OrderStatus = "SHIPPED"
 	DELIVERED OrderStatus = "DELIVERED"
 	CANCELLED OrderStatus = "CANCELLED"
 )

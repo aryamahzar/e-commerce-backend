@@ -46,7 +46,19 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello World!")
 }
 
+func IndexDefault(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello World for my default Index!")
+}
+
 var routes = Routes{
+
+	Route{
+		"Index",
+		"GET",
+		"/",
+		IndexDefault,
+	},
+
 	Route{
 		"Index",
 		"GET",
