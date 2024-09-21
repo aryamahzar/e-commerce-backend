@@ -10,6 +10,7 @@ COPY go.mod go.sum ./
 RUN go mod download 
 
 COPY go ./go
+COPY db ./db
 COPY main.go .
 
 ENV CGO_ENABLED=0
